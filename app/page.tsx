@@ -27,7 +27,7 @@ export default function Home() {
               <a href="https://www.amazon.in" className="underline">
                 amazon.in
               </a>{" "}
-              or
+              or{" "}
               <a href="https://flipkart.com" className="underline">
                 flipkart.com
               </a>{" "}
