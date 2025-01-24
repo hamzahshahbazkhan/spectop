@@ -112,7 +112,7 @@ function Compare() {
   const [error, setError] = useState(false);
   const [verdict, setVerdict] = useState<{
     Laptops: Laptop[];
-    Comparison: Record<string, any>;
+    Comparison: Record<string, unknown>;
     Verdict: string;
   }>({
     Laptops: [],
