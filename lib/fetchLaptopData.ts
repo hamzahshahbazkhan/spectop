@@ -19,6 +19,30 @@ interface Product {
   specs?: Record<string, string>;
 }
 
+// export default async function fetchLaptopData(
+//   firstUrl: string,
+//   secondUrl: string
+// ) {
+//   try {
+//     if (!firstUrl || !secondUrl) {
+//       return { error: "Both URLs are required" };
+//     }
+//     const [firstProduct, secondProduct] = await Promise.all([
+//       getDetails(firstUrl),
+//       getDetails(secondUrl),
+//     ]);
+//     if (typeof firstProduct === "string") {
+//       return { error: `First product: ${firstProduct}` };
+//     }
+//     if (typeof secondProduct === "string") {
+//       return { error: `Second product: ${secondProduct}` };
+//     }
+//     return { firstProduct, secondProduct };
+//   } catch (error) {
+//     return { error: error };
+//   }
+// }
+
 export default async function fetchLaptopData(
   firstUrl: string,
   secondUrl: string
@@ -27,16 +51,17 @@ export default async function fetchLaptopData(
     if (!firstUrl || !secondUrl) {
       return { error: "Both URLs are required" };
     }
-    const [firstProduct, secondProduct] = await Promise.all([
-      getDetails(firstUrl),
-      getDetails(secondUrl),
-    ]);
+
+    const firstProduct = await getDetails(firstUrl);
     if (typeof firstProduct === "string") {
       return { error: `First product: ${firstProduct}` };
     }
+
+    const secondProduct = await getDetails(secondUrl);
     if (typeof secondProduct === "string") {
       return { error: `Second product: ${secondProduct}` };
     }
+
     return { firstProduct, secondProduct };
   } catch (error) {
     return { error: error };
