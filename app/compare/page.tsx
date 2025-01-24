@@ -3,7 +3,6 @@ import Warning from "@/components/ui/Warning";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useProductContext } from "@/context/ProductContext";
-import { Img } from "@/components/ui/Image";
 import Wrapper from "@/components/ui/Wrapper";
 import ToggleCard from "@/components/ToggleCard";
 import Loader from "@/components/ui/Loader";
