@@ -25,8 +25,8 @@ const LaptopCard = ({
   secondLaptop: Laptop;
 }) => (
   <Wrapper>
-    <div className="overflow-x-auto">
-      <table className="min-w-full border-collapse">
+    <div className="overflow-x-auto w-full max-w-full">
+      <table className="w-full border-collapse table-auto">
         <thead>
           <tr>
             <th className="border-2 border-primary p-2 text-left">

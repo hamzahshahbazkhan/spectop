@@ -1,9 +1,12 @@
 import * as cheerio from "cheerio";
-import puppeteer from "puppeteer";
+// import puppeteer from "puppeteer";
 // const chromium = require("@sparticuz/chromium");
 // const puppeteer = require("puppeteer-core");
 // import chromium from "@sparticuz/chromium";
 // import puppeteer from "puppeteer-core";
+import puppeteer, { type Browser } from "puppeteer";
+import puppeteerCore, { type Browser as BrowserCore } from "puppeteer-core";
+import chromium from "@sparticuz/chromium-min";
 
 interface Product {
   title: string;
@@ -52,7 +55,6 @@ const getDetails = async (url: string): Promise<Product | string> => {
     return "Not a valid website - only Amazon and Flipkart are supported";
   }
 };
-
 const getProductDetails = async (url: string): Promise<Product | string> => {
   const product: Product = {
     bullets: [],
@@ -63,82 +65,72 @@ const getProductDetails = async (url: string): Promise<Product | string> => {
     img: undefined,
     features: [],
   };
+
   let browser = null;
   try {
-    browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+    if (
+      process.env.NODE_ENV === "production" ||
+      process.env.VERCEL_ENV === "production"
+    ) {
+      const executablePath = await chromium.executablePath(
+        "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar"
+      );
+      browser = await puppeteerCore.launch({
+        executablePath,
+        args: chromium.args,
+        headless: chromium.headless,
+        defaultViewport: chromium.defaultViewport,
+      });
+    } else {
+      browser = await puppeteer.launch({
+        headless: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      });
+    }
+
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: "networkidle2" });
 
-    // Basic product info
-    product.title = await page.$eval(
-      "#productTitle",
-      (el) => el.textContent?.trim() || ""
-    );
-    product.rating = await page.$eval(
-      "#acrPopover",
-      (el) => el.getAttribute("title")?.trim() || ""
-    );
-    product.price = await page.$eval(
-      "span.a-price-whole",
-      (el) => el.textContent?.trim() || ""
-    );
-    product.img = await page.$eval(
-      "#landingImage",
-      (el) => el.getAttribute("src") || ""
-    );
+    const content = await page.content();
+    const $ = cheerio.load(content);
 
-    // Feature bullets
-    const featureList = await page.$$eval(
-      "#feature-bullets ul.a-unordered-list li span.a-list-item",
-      (elems) => elems.map((elem) => elem.textContent?.trim() || "")
-    );
-    product.bullets = featureList;
+    product.title = $("#productTitle").text().trim();
+    product.rating = $("#acrPopover").attr("title")?.trim();
+    product.price = $("span.a-price-whole").first().text().trim();
+    product.img = $("#landingImage").attr("src");
 
-    // Product details table
-    const tableData: Record<string, string>[] = [];
-    const rows = await page.$$("#poExpander table tbody tr");
-    for (const row of rows) {
-      try {
-        const key = await row.$eval(
-          "td.a-span3 span.a-size-base.a-text-bold",
-          (el) => el.textContent?.trim() || ""
-        );
-        const value = await row.$eval(
-          "td.a-span9 span.a-size-base.po-break-word",
-          (el) => el.textContent?.trim() || ""
-        );
-        if (key && value) {
-          tableData.push({ key, value });
-        }
-      } catch (err) {
-        continue;
+    const bullets: string[] = [];
+    $("#feature-bullets ul.a-unordered-list li span.a-list-item").each(
+      (i, elem) => {
+        bullets.push($(elem).text().trim());
       }
-    }
+    );
+    product.bullets = bullets;
+
+    const tableData: Record<string, string>[] = [];
+    $("#poExpander table tbody tr").each((i, row) => {
+      const key = $(row)
+        .find("td.a-span3 span.a-size-base.a-text-bold")
+        .text()
+        .trim();
+      const value = $(row)
+        .find("td.a-span9 span.a-size-base.po-break-word")
+        .text()
+        .trim();
+      if (key && value) {
+        tableData.push({ key, value });
+      }
+    });
     product.details = tableData;
 
-    // Specs table
     const specsTableData: Record<string, string> = {};
-    const drows = await page.$$("table.prodDetTable tr");
-    for (const drow of drows) {
-      try {
-        const key = await drow.$eval(
-          "th.prodDetSectionEntry",
-          (el) => el.textContent?.trim() || ""
-        );
-        const value = await drow.$eval(
-          "td.prodDetAttrValue",
-          (el) => el.textContent?.trim() || ""
-        );
-        if (key && value) {
-          specsTableData[key] = value;
-        }
-      } catch (error) {
-        continue;
+    $("table.prodDetTable tr").each((i, row) => {
+      const key = $(row).find("th.prodDetSectionEntry").text().trim();
+      const value = $(row).find("td.prodDetAttrValue").text().trim();
+      if (key && value) {
+        specsTableData[key] = value;
       }
-    }
+    });
     product.specs = specsTableData;
 
     if (product.title === "" || product.details.length === 0) {
@@ -155,7 +147,6 @@ const getProductDetails = async (url: string): Promise<Product | string> => {
     }
   }
 };
-
 const getProductDetailsFromFlipkart = async (
   url: string
 ): Promise<Product | string> => {
@@ -170,10 +161,32 @@ const getProductDetailsFromFlipkart = async (
 
   let browser = null;
   try {
-    browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+    if (
+      process.env.NODE_ENV === "production" ||
+      process.env.VERCEL_ENV === "production"
+    ) {
+      // Configure the version based on your package.json (for your future usage).
+      const executablePath = await chromium.executablePath(
+        "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar"
+      );
+      browser = await puppeteerCore.launch({
+        executablePath,
+        // You can pass other configs as required
+        args: chromium.args,
+        headless: chromium.headless,
+        defaultViewport: chromium.defaultViewport,
+      });
+    } else {
+      browser = await puppeteer.launch({
+        headless: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      });
+    }
+
+    // browser = await puppeteer.launch({
+    //   headless: true,
+    //   args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    // });
     const page = await browser.newPage();
 
     await page.goto(url, { waitUntil: "networkidle2" });
