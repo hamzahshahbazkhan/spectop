@@ -27,7 +27,15 @@ export default function Home() {
               <a href="https://www.amazon.in" className="underline">
                 amazon.in
               </a>{" "}
+              or
+              <a href="https://flipkart.com" className="underline">
+                flipkart.com
+              </a>{" "}
               for accurate results.
+            </div>
+            <div className="text-secondary mt-2">
+              IT TAKES AROUND 1 MINUTE FOR THE RESULTS TO BE DISPLAYED SO SIT
+              BACK
             </div>
           </Wrapper>
         </div>

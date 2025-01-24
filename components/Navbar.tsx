@@ -8,7 +8,7 @@ function Navbar() {
     <div className="text-6xl pl-4 bg-background text-text ">
       <div className="flex justify-between">
         <a href="/">spectop</a>
-        <a href="https://www.github.com">
+        <a href="https://github.com/hamzahshahbazkhan/spectop">
           <GithubIcon />
         </a>
       </div>
