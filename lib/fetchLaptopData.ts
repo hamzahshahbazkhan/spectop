@@ -4,8 +4,8 @@ import * as cheerio from "cheerio";
 // const puppeteer = require("puppeteer-core");
 // import chromium from "@sparticuz/chromium";
 // import puppeteer from "puppeteer-core";
-import puppeteer, { type Browser } from "puppeteer";
-import puppeteerCore, { type Browser as BrowserCore } from "puppeteer-core";
+import puppeteer from "puppeteer";
+import puppeteerCore from "puppeteer-core";
 import chromium from "@sparticuz/chromium-min";
 
 interface Product {
