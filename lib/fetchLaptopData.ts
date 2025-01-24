@@ -39,7 +39,7 @@ export default async function fetchLaptopData(
     }
     return { firstProduct, secondProduct };
   } catch (error) {
-    return { error: "Failed to fetch laptop data" };
+    return { error: error };
   }
 }
 
