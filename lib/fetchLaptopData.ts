@@ -76,7 +76,12 @@ const getProductDetails = async (url: string): Promise<Product | string> => {
     );
     browser = await puppeteerCore.launch({
       executablePath,
-      args: chromium.args,
+      args: [
+        ...chromium.args,
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--single-process", // Add this flag
+      ],
       headless: chromium.headless,
       defaultViewport: chromium.defaultViewport,
     });
