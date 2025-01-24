@@ -12,8 +12,9 @@ interface Laptop {
   title?: string;
   price?: string;
   rating?: string;
-  [key: string]: string | undefined;
+  [key: string]: string | object | undefined;
 }
+
 const LaptopCard = ({
   laptops,
   firstLaptop,
@@ -43,18 +44,26 @@ const LaptopCard = ({
           <tr>
             <td className="border-2 border-primary p-2 font-semibold">Image</td>
             <td className="border-2 border-primary p-2">
-              <img
-                src={firstLaptop.img}
-                alt="First laptop"
-                className="w-36 h-auto mx-auto"
-              />
+              {firstLaptop.img ? (
+                <img
+                  src={firstLaptop.img}
+                  alt="First laptop"
+                  className="w-36 h-auto mx-auto"
+                />
+              ) : (
+                "N/A"
+              )}
             </td>
             <td className="border-2 border-primary p-2">
-              <img
-                src={secondLaptop.img}
-                alt="Second laptop"
-                className="w-36 h-auto mx-auto"
-              />
+              {secondLaptop.img ? (
+                <img
+                  src={secondLaptop.img}
+                  alt="Second laptop"
+                  className="w-36 h-auto mx-auto"
+                />
+              ) : (
+                "N/A"
+              )}
             </td>
           </tr>
           <tr>
@@ -94,10 +103,14 @@ const LaptopCard = ({
                 {key}
               </td>
               <td className="border-2 border-primary p-2">
-                {laptops[0][key] || "N/A"}
+                {typeof laptops[0][key] === "object"
+                  ? JSON.stringify(laptops[0][key])
+                  : laptops[0][key] || "N/A"}
               </td>
               <td className="border-2 border-primary p-2">
-                {laptops[1]?.[key] || "N/A"}
+                {typeof laptops[1]?.[key] === "object"
+                  ? JSON.stringify(laptops[1]?.[key])
+                  : laptops[1]?.[key] || "N/A"}
               </td>
             </tr>
           ))}
@@ -112,7 +125,7 @@ function Compare() {
   const [error, setError] = useState(false);
   const [verdict, setVerdict] = useState<{
     Laptops: Laptop[];
-    Comparison: Record<string, string>;
+    Comparison: Record<string, string | object>;
     Verdict: string;
   }>({
     Laptops: [],
@@ -124,6 +137,12 @@ function Compare() {
   useEffect(() => {
     async function fetchData() {
       try {
+        if (!firstProduct || !secondProduct) {
+          setError(true);
+          setIsLoading(false);
+          return;
+        }
+
         console.log(firstProduct);
         console.log(secondProduct);
         const response = await axios.post("/api/compare-laptops", {
@@ -170,27 +189,33 @@ function Compare() {
 
           <div className="my-8">
             <h2 className="text-2xl md:text-4xl text-text">Specifications:</h2>
-            {/* {verdict.Laptops && ( */}
             <LaptopCard
               laptops={verdict.Laptops}
               firstLaptop={{
-                img: firstProduct || "",
-                title: firstProduct || "",
-                price: firstProduct || "",
-                rating: firstProduct || "",
+                img: firstProduct?.img || "",
+                title: firstProduct?.title || "",
+                price: firstProduct?.price || "",
+                rating: firstProduct?.rating || "",
               }}
               secondLaptop={{
-                img: secondProduct || "",
-                title: secondProduct || "",
-                price: secondProduct || "",
-                rating: secondProduct || "",
+                img: secondProduct?.img || "",
+                title: secondProduct?.title || "",
+                price: secondProduct?.price || "",
+                rating: secondProduct?.rating || "",
               }}
             />
           </div>
 
           <div className="my-8">
-            <h2 className="text-2xl md:text-4xl  text-text">Comparison:</h2>
-            <ToggleCard comparison={verdict.Comparison} />
+            <h2 className="text-2xl md:text-4xl text-text">Comparison:</h2>
+            <ToggleCard
+              comparison={Object.fromEntries(
+                Object.entries(verdict.Comparison).map(([key, value]) => [
+                  key,
+                  typeof value === "object" ? JSON.stringify(value) : value,
+                ])
+              )}
+            />
           </div>
         </div>
       )}

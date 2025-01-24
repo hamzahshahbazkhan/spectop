@@ -1,5 +1,9 @@
 import * as cheerio from "cheerio";
 import puppeteer from "puppeteer";
+// const chromium = require("@sparticuz/chromium");
+// const puppeteer = require("puppeteer-core");
+// import chromium from "@sparticuz/chromium";
+// import puppeteer from "puppeteer-core";
 
 interface Product {
   title: string;
