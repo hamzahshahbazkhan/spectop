@@ -67,27 +67,26 @@ const getProductDetails = async (url: string): Promise<Product | string> => {
   };
 
   let browser = null;
+  if (
+    process.env.NODE_ENV === "production" ||
+    process.env.VERCEL_ENV === "production"
+  ) {
+    const executablePath = await chromium.executablePath(
+      "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar"
+    );
+    browser = await puppeteerCore.launch({
+      executablePath,
+      args: chromium.args,
+      headless: chromium.headless,
+      defaultViewport: chromium.defaultViewport,
+    });
+  } else {
+    browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
+  }
   try {
-    if (
-      process.env.NODE_ENV === "production" ||
-      process.env.VERCEL_ENV === "production"
-    ) {
-      const executablePath = await chromium.executablePath(
-        "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar"
-      );
-      browser = await puppeteerCore.launch({
-        executablePath,
-        args: chromium.args,
-        headless: chromium.headless,
-        defaultViewport: chromium.defaultViewport,
-      });
-    } else {
-      browser = await puppeteer.launch({
-        headless: true,
-        args: ["--no-sandbox", "--disable-setuid-sandbox"],
-      });
-    }
-
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: "networkidle2" });
 
@@ -160,29 +159,28 @@ const getProductDetailsFromFlipkart = async (
   };
 
   let browser = null;
+  if (
+    process.env.NODE_ENV === "production" ||
+    process.env.VERCEL_ENV === "production"
+  ) {
+    // Configure the version based on your package.json (for your future usage).
+    const executablePath = await chromium.executablePath(
+      "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar"
+    );
+    browser = await puppeteerCore.launch({
+      executablePath,
+      // You can pass other configs as required
+      args: chromium.args,
+      headless: chromium.headless,
+      defaultViewport: chromium.defaultViewport,
+    });
+  } else {
+    browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
+  }
   try {
-    if (
-      process.env.NODE_ENV === "production" ||
-      process.env.VERCEL_ENV === "production"
-    ) {
-      // Configure the version based on your package.json (for your future usage).
-      const executablePath = await chromium.executablePath(
-        "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar"
-      );
-      browser = await puppeteerCore.launch({
-        executablePath,
-        // You can pass other configs as required
-        args: chromium.args,
-        headless: chromium.headless,
-        defaultViewport: chromium.defaultViewport,
-      });
-    } else {
-      browser = await puppeteer.launch({
-        headless: true,
-        args: ["--no-sandbox", "--disable-setuid-sandbox"],
-      });
-    }
-
     // browser = await puppeteer.launch({
     //   headless: true,
     //   args: ["--no-sandbox", "--disable-setuid-sandbox"],
