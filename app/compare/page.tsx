@@ -7,7 +7,22 @@ import Wrapper from "@/components/ui/Wrapper";
 import ToggleCard from "@/components/ToggleCard";
 import Loader from "@/components/ui/Loader";
 
-const LaptopCard = ({ laptops, firstLaptop, secondLaptop }) => (
+interface Laptop {
+  img?: string;
+  title?: string;
+  price?: string;
+  rating?: string;
+  [key: string]: string | undefined;
+}
+const LaptopCard = ({
+  laptops,
+  firstLaptop,
+  secondLaptop,
+}: {
+  laptops: Laptop[];
+  firstLaptop: Laptop;
+  secondLaptop: Laptop;
+}) => (
   <Wrapper>
     <div className="overflow-x-auto">
       <table className="min-w-full border-collapse">
@@ -95,7 +110,11 @@ const LaptopCard = ({ laptops, firstLaptop, secondLaptop }) => (
 function Compare() {
   const { firstProduct, secondProduct, preferenceTags } = useProductContext();
   const [error, setError] = useState(false);
-  const [verdict, setVerdict] = useState({
+  const [verdict, setVerdict] = useState<{
+    Laptops: Laptop[];
+    Comparison: Record<string, any>;
+    Verdict: string;
+  }>({
     Laptops: [],
     Comparison: {},
     Verdict: "",
@@ -154,8 +173,18 @@ function Compare() {
             {/* {verdict.Laptops && ( */}
             <LaptopCard
               laptops={verdict.Laptops}
-              firstLaptop={firstProduct}
-              secondLaptop={secondProduct}
+              firstLaptop={{
+                img: firstProduct || "",
+                title: firstProduct || "",
+                price: firstProduct || "",
+                rating: firstProduct || "",
+              }}
+              secondLaptop={{
+                img: secondProduct || "",
+                title: secondProduct || "",
+                price: secondProduct || "",
+                rating: secondProduct || "",
+              }}
             />
           </div>
 

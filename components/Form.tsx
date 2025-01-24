@@ -41,7 +41,6 @@ function Form() {
         firstUrl,
         secondUrl,
       });
-      console.log("HELLO", response);
       if (response.data.error) {
         setError(response.data.error);
         return;
