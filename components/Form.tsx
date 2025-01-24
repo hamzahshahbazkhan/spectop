@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import axios, { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
 import { useProductContext } from "@/context/ProductContext";
@@ -12,7 +12,6 @@ function Form() {
   const {
     firstLink,
     secondLink,
-    preferenceTags,
     setFirstLink,
     setSecondLink,
     setFirstProduct,
