@@ -29,7 +29,7 @@ function Form() {
     setFirstUrl(firstLink);
     setSecondUrl(secondLink);
     setTags(preferenceTags);
-  }, []);
+  }, [firstLink, preferenceTags, secondLink]);
 
   const submitForm = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

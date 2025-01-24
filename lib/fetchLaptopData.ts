@@ -182,7 +182,7 @@ const getProductDetailsFromFlipkart = async (
     product.price = $("div.Nx9bqj.CxhGGd").text().trim();
     product.img = $("img.DByuf4.IZexXJ.jLEJ7H").attr("src");
 
-    let listItems: Record<string, string>[] = [];
+    const listItems: Record<string, string>[] = [];
     $("div.pqHCzB").each((i, elem) => {
       const title = $(elem).find("._9GQWrZ").text().trim();
       listItems.push({ title });

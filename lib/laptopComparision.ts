@@ -4,7 +4,7 @@ interface Product {
   title: string;
   rating: string | undefined;
   price: string;
-  details: Object;
+  details: Record<string, unknown>;
 }
 interface laptopComparisionProps {
   firstProduct: Product;

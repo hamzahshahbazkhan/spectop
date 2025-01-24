@@ -2,7 +2,7 @@ import React from "react";
 import Toggle from "./ui/Toggle";
 
 interface ToggleProps {
-  comparison: Record<string, any>;
+  comparison: Record<string, string>;
 }
 
 function ToggleCard({ comparison }: ToggleProps) {
