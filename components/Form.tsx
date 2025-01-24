@@ -25,12 +25,12 @@ function Form() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    setFirstUrl(firstLink);
-    setSecondUrl(secondLink);
-    setTags(preferenceTags);
-  }, [firstLink, preferenceTags, secondLink]);
-
+  // useEffect(() => {
+  //   setFirstUrl(firstLink);
+  //   setSecondUrl(secondLink);
+  //   setTags(preferenceTags);
+  // }, [firstLink, preferenceTags, secondLink]);
+  //
   const submitForm = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
