@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #E9E3D7;
+    --background: #2e8496;
+    --primary: #474646;
+    --secondary: #D45456;
+  }
+}
+
+@media (max-width: 640px) {
+  .responsive-table {
+    display: block;
+    width: 100%;
+  }
+
+  .responsive-table tr {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+  }
+
+  .responsive-table td {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.5rem 1rem;
+  }
+
+  .responsive-table th {
+    display: none;
+  }
+}
+
+.custom-icon {
+  color: var(--secondary);
+  font-size: 1.5rem;
+}
+
+body {
+  color: var(--primary);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

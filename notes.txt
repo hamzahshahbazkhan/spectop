@@ -1,0 +1,17 @@
+[x] url validate only compare if both url are valid
+[x] laptop validate only compare if both products are laptop and not other 
+[ ] error handling
+[ ] navbar link
+[ ] github link
+[ ] Warning component etc
+[ ] redirect to home from /compare
+[ ] Loading sign or icon
+[ ] save the product url and fetch from the local storage
+[ ] error handling in comparision part
+[ ] go through all files and remove unnecessary things
+[ ] final touches
+[ ] manages api keys and stuff
+[ ] deploy on vercel
+
+enough for now
+
