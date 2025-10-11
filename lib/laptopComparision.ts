@@ -23,7 +23,7 @@ export default async function laptopComparision({
   // console.log(secondProduct);
   // console.log(simpleData);
   const genAI = new GoogleGenerativeAI(process.env.API_KEY!);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
   const prompt = `Given the specifications, rating, and other features of two laptops, generate a factually correct JSON object for each laptop under a single Laptop category. Each laptop's JSON should include a standardized set of attributes without nested categories.
 
 For each laptop, include the following attributes. Do not include any other attribute not mentioned below not even title. the attributes below are exhaustive list.
