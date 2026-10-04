@@ -5,6 +5,8 @@ import * as cheerio from "cheerio";
 // import chromium from "@sparticuz/chromium";
 // import puppeteer from "puppeteer-core";
 import puppeteer from "puppeteer";
+import type { Browser as PuppeteerBrowser } from "puppeteer";
+import type { Browser as PuppeteerCoreBrowser } from "puppeteer-core";
 import puppeteerCore from "puppeteer-core";
 import chromium from "@sparticuz/chromium-min";
 
@@ -183,7 +185,7 @@ const getProductDetailsFromFlipkart = async (
     features: [],
   };
 
-  let browser: any = null;
+  let browser!: PuppeteerBrowser | PuppeteerCoreBrowser;
   if (
     process.env.NODE_ENV === "production" ||
     process.env.VERCEL_ENV === "production"
@@ -215,14 +217,17 @@ const getProductDetailsFromFlipkart = async (
     await page.goto(url, { waitUntil: "networkidle2" });
 
     try {
-      await page.evaluate(() => {
+      const clickSpecsTab = () => {
         const tab = Array.from(document.querySelectorAll("div")).find(
           (e) =>
             e.children.length === 0 &&
             e.textContent?.trim() === "Specifications"
         );
         (tab as HTMLElement | undefined)?.click();
-      });
+      };
+      await (page.evaluate as (fn: () => void) => Promise<void>)(
+        clickSpecsTab
+      );
       await page.waitForSelector("div.grid-formation-dynamic", {
         timeout: 15000,
       });
