@@ -45,6 +45,34 @@ interface Product {
 //   }
 // }
 
+type SharedBrowser = PuppeteerBrowser | PuppeteerCoreBrowser;
+
+const CHROMIUM_PACK_URL =
+  "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar";
+
+const isProductionEnv =
+  process.env.NODE_ENV === "production" ||
+  process.env.VERCEL_ENV === "production";
+
+const launchSharedBrowser = async (): Promise<SharedBrowser> => {
+  if (isProductionEnv) {
+    const executablePath = await chromium.executablePath(CHROMIUM_PACK_URL);
+    return (await puppeteerCore.launch({
+      executablePath,
+      args: chromium.args,
+      headless: chromium.headless,
+      defaultViewport: chromium.defaultViewport,
+    })) as unknown as SharedBrowser;
+  }
+  return (await puppeteer.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  })) as unknown as SharedBrowser;
+};
+
+const sleep = (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
 export default async function fetchLaptopData(
   firstUrl: string,
   secondUrl: string
@@ -54,38 +82,79 @@ export default async function fetchLaptopData(
       return { error: "Both URLs are required" };
     }
 
-    // Fetch in parallel to halve total time (critical for Vercel timeouts).
-    const [firstProduct, secondProduct] = await Promise.all([
-      getDetails(firstUrl),
-      getDetails(secondUrl),
-    ]);
-    if (typeof firstProduct === "string") {
-      return { error: `First product: ${firstProduct}` };
+    const supported = (u: string) =>
+      u.includes("amazon") ||
+      u.includes("amzn") ||
+      u.includes("flipkart") ||
+      u.includes("flip");
+    if (!supported(firstUrl) || !supported(secondUrl)) {
+      const [firstProduct, secondProduct] = await Promise.all([
+        getDetails(firstUrl),
+        getDetails(secondUrl),
+      ]);
+      if (typeof firstProduct === "string") {
+        return { error: `First product: ${firstProduct}` };
+      }
+      if (typeof secondProduct === "string") {
+        return { error: `Second product: ${secondProduct}` };
+      }
+      return { firstProduct, secondProduct };
     }
 
-    if (typeof secondProduct === "string") {
-      return { error: `Second product: ${secondProduct}` };
-    }
+    let browser: SharedBrowser | null = null;
+    try {
+      try {
+        browser = await launchSharedBrowser();
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (!msg.includes("ETXTBSY")) throw err;
+        await sleep(1000);
+        browser = await launchSharedBrowser();
+      }
 
-    return { firstProduct, secondProduct };
+      const shared = browser;
+      const [firstProduct, secondProduct] = await Promise.all([
+        getDetails(firstUrl, shared),
+        getDetails(secondUrl, shared),
+      ]);
+      if (typeof firstProduct === "string") {
+        return { error: `First product: ${firstProduct}` };
+      }
+
+      if (typeof secondProduct === "string") {
+        return { error: `Second product: ${secondProduct}` };
+      }
+
+      return { firstProduct, secondProduct };
+    } finally {
+      if (browser) {
+        await (browser as PuppeteerCoreBrowser).close().catch(() => {});
+      }
+    }
   } catch (error) {
     return { error: error instanceof Error ? error.message : String(error) };
   }
 }
 
-const getDetails = async (url: string): Promise<Product | string> => {
+const getDetails = async (
+  url: string,
+  sharedBrowser?: SharedBrowser
+): Promise<Product | string> => {
   if (!url) {
     return "URL is required";
   }
   if (url.includes("amazon") || url.includes("amzn")) {
-    return getProductDetails(url);
+    return getProductDetails(url, sharedBrowser);
   } else if (url.includes("flipkart") || url.includes("flip")) {
-    return getProductDetailsFromFlipkart(url);
+    return getProductDetailsFromFlipkart(url, sharedBrowser);
   } else {
     return "Not a valid website - only Amazon and Flipkart are supported";
   }
 };
-const getProductDetails = async (url: string): Promise<Product | string> => {
+const getProductDetails = async (
+  url: string,
+  sharedBrowser?: SharedBrowser
+): Promise<Product | string> => {
   const product: Product = {
     bullets: [],
     title: "",
@@ -96,28 +165,32 @@ const getProductDetails = async (url: string): Promise<Product | string> => {
     features: [],
   };
 
-  let browser = null;
+  let browser: SharedBrowser | null = sharedBrowser ?? null;
+  let ownsBrowser = false;
   // if (
   //   process.env.NODE_ENV === "production" ||
   //   process.env.VERCEL_ENV === "production"
   // ) {
-  const executablePath = await chromium.executablePath(
-    "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar"
-  );
-  browser = await puppeteerCore.launch({
-    executablePath,
-    args: chromium.args,
-    headless: chromium.headless,
-    defaultViewport: chromium.defaultViewport,
-  });
+  if (!browser) {
+    const executablePath = await chromium.executablePath(CHROMIUM_PACK_URL);
+    browser = (await puppeteerCore.launch({
+      executablePath,
+      args: chromium.args,
+      headless: chromium.headless,
+      defaultViewport: chromium.defaultViewport,
+    })) as unknown as SharedBrowser;
+    ownsBrowser = true;
+  }
   // } else {
   //   browser = await puppeteer.launch({
   //     headless: true,
   //     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   //   });
   // }
+  let page: Awaited<ReturnType<PuppeteerCoreBrowser["newPage"]>> | null =
+    null;
   try {
-    const page = await browser.newPage();
+    page = await (browser as PuppeteerCoreBrowser).newPage();
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 25000 });
 
     const content = await page.content();
@@ -171,13 +244,17 @@ const getProductDetails = async (url: string): Promise<Product | string> => {
     console.error("Request failed:", error);
     return "Failed to fetch product details from Amazon";
   } finally {
-    if (browser) {
-      await browser.close();
+    if (page) {
+      await page.close().catch(() => {});
+    }
+    if (ownsBrowser && browser) {
+      await (browser as PuppeteerCoreBrowser).close().catch(() => {});
     }
   }
 };
 const getProductDetailsFromFlipkart = async (
-  url: string
+  url: string,
+  sharedBrowser?: SharedBrowser
 ): Promise<Product | string> => {
   const product: Product = {
     title: "",
@@ -188,34 +265,35 @@ const getProductDetailsFromFlipkart = async (
     features: [],
   };
 
-  let browser!: PuppeteerBrowser | PuppeteerCoreBrowser;
-  if (
-    process.env.NODE_ENV === "production" ||
-    process.env.VERCEL_ENV === "production"
-  ) {
-    // Configure the version based on your package.json (for your future usage).
-    const executablePath = await chromium.executablePath(
-      "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar"
-    );
-    browser = await puppeteerCore.launch({
-      executablePath,
-      // You can pass other configs as required
-      args: chromium.args,
-      headless: chromium.headless,
-      defaultViewport: chromium.defaultViewport,
-    });
-  } else {
-    browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+  let browser: SharedBrowser | null = sharedBrowser ?? null;
+  let ownsBrowser = false;
+  if (!browser) {
+    if (isProductionEnv) {
+      // Configure the version based on your package.json (for your future usage).
+      const executablePath = await chromium.executablePath(CHROMIUM_PACK_URL);
+      browser = (await puppeteerCore.launch({
+        executablePath,
+        // You can pass other configs as required
+        args: chromium.args,
+        headless: chromium.headless,
+        defaultViewport: chromium.defaultViewport,
+      })) as unknown as SharedBrowser;
+    } else {
+      browser = (await puppeteer.launch({
+        headless: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      })) as unknown as SharedBrowser;
+    }
+    ownsBrowser = true;
   }
+  let page: Awaited<ReturnType<PuppeteerCoreBrowser["newPage"]>> | null =
+    null;
   try {
     // browser = await puppeteer.launch({
     //   headless: true,
     //   args: ["--no-sandbox", "--disable-setuid-sandbox"],
     // });
-    const page = await browser.newPage();
+    page = await (browser as PuppeteerCoreBrowser).newPage();
 
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 25000 });
 
@@ -280,8 +358,11 @@ const getProductDetailsFromFlipkart = async (
     console.error("Request failed:", error);
     return "Failed to fetch product details from Flipkart";
   } finally {
-    if (browser) {
-      await browser.close();
+    if (page) {
+      await page.close().catch(() => {});
+    }
+    if (ownsBrowser && browser) {
+      await (browser as PuppeteerCoreBrowser).close().catch(() => {});
     }
   }
 };
