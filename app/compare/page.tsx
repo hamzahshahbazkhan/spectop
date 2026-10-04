@@ -151,13 +151,29 @@ function Compare() {
           preferenceTags,
         });
         console.log(response);
-        const cleanedString = response.data.result
+        const rawResult = response.data.result;
+        const rawString =
+          typeof rawResult === "string"
+            ? rawResult
+            : JSON.stringify(rawResult ?? {});
+        const cleanedString = rawString
           .replace(/```json\s*/g, "")
           .replace(/```/g, "")
           .replace(/\\"/g, '"')
           .trim();
         console.log(cleanedString);
-        setVerdict(await JSON.parse(cleanedString));
+        const parsed = JSON.parse(cleanedString);
+        setVerdict({
+          Laptops: Array.isArray(parsed.Laptops) ? parsed.Laptops : [],
+          Comparison:
+            parsed.Comparison && typeof parsed.Comparison === "object"
+              ? parsed.Comparison
+              : {},
+          Verdict:
+            typeof parsed.Verdict === "string"
+              ? parsed.Verdict
+              : JSON.stringify(parsed.Verdict ?? ""),
+        });
         setIsLoading(false);
       } catch (err) {
         console.error("Error:", err);
@@ -183,7 +199,9 @@ function Compare() {
           <div className="my-4">
             <h2 className="text-2xl md:text-4xl text-text">Verdict:</h2>
             <p className="text-base md:text-lg text-text mt-2 ">
-              {verdict.Verdict}
+              {typeof verdict.Verdict === "string"
+                ? verdict.Verdict
+                : JSON.stringify(verdict.Verdict ?? "")}
             </p>
           </div>
 
@@ -210,9 +228,9 @@ function Compare() {
             <h2 className="text-2xl md:text-4xl text-text">Comparison:</h2>
             <ToggleCard
               comparison={Object.fromEntries(
-                Object.entries(verdict.Comparison).map(([key, value]) => [
+                Object.entries(verdict.Comparison ?? {}).map(([key, value]) => [
                   key,
-                  typeof value === "object" ? JSON.stringify(value) : value,
+                  typeof value === "string" ? value : JSON.stringify(value),
                 ])
               )}
             />

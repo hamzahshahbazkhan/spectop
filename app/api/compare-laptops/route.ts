@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import laptopComparision from "@/lib/laptopComparision";
 
+export const maxDuration = 60;
+
 const POST = async (req: NextRequest) => {
   try {
     const { firstProduct, secondProduct, preferenceTags } = await req.json();

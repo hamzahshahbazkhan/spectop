@@ -54,8 +54,15 @@ function Form() {
       router.push("/compare");
     } catch (err) {
       if (err instanceof AxiosError) {
+        const apiError = err.response?.data?.error;
         setError(
-          err.response?.data?.error || "Failed to fetch product details"
+          typeof apiError === "string"
+            ? apiError
+            : apiError != null
+              ? JSON.stringify(apiError)
+              : err.code === "ECONNABORTED" || err.response?.status === 504
+                ? "Request timed out (504). Scraping took too long — try again or use a different URL."
+                : "Failed to fetch product details"
         );
       } else {
         setError("An unexpected error occurred");

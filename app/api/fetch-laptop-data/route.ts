@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import fetchLaptopData from "@/lib/fetchLaptopData";
 
+export const maxDuration = 60;
+
+const toErrorMessage = (value: unknown): string => {
+  if (typeof value === "string") return value;
+  if (value instanceof Error) return value.message;
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return "Not a valid url";
+  }
+};
+
 const POST = async (req: NextRequest) => {
   try {
     const { firstUrl, secondUrl } = await req.json();
@@ -9,7 +21,7 @@ const POST = async (req: NextRequest) => {
       console.log(response);
       return NextResponse.json(
         {
-          error: "Not a valid url",
+          error: toErrorMessage(response.error),
         },
         {
           status: 400,

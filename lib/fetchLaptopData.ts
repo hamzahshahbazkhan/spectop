@@ -54,19 +54,22 @@ export default async function fetchLaptopData(
       return { error: "Both URLs are required" };
     }
 
-    const firstProduct = await getDetails(firstUrl);
+    // Fetch in parallel to halve total time (critical for Vercel timeouts).
+    const [firstProduct, secondProduct] = await Promise.all([
+      getDetails(firstUrl),
+      getDetails(secondUrl),
+    ]);
     if (typeof firstProduct === "string") {
       return { error: `First product: ${firstProduct}` };
     }
 
-    const secondProduct = await getDetails(secondUrl);
     if (typeof secondProduct === "string") {
       return { error: `Second product: ${secondProduct}` };
     }
 
     return { firstProduct, secondProduct };
   } catch (error) {
-    return { error: error };
+    return { error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -115,7 +118,7 @@ const getProductDetails = async (url: string): Promise<Product | string> => {
   // }
   try {
     const page = await browser.newPage();
-    await page.goto(url, { waitUntil: "networkidle2" });
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 25000 });
 
     const content = await page.content();
     const $ = cheerio.load(content);
@@ -214,7 +217,7 @@ const getProductDetailsFromFlipkart = async (
     // });
     const page = await browser.newPage();
 
-    await page.goto(url, { waitUntil: "networkidle2" });
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 25000 });
 
     try {
       const clickSpecsTab = () => {
