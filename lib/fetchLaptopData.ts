@@ -183,7 +183,7 @@ const getProductDetailsFromFlipkart = async (
     features: [],
   };
 
-  let browser = null;
+  let browser: any = null;
   if (
     process.env.NODE_ENV === "production" ||
     process.env.VERCEL_ENV === "production"
@@ -214,33 +214,53 @@ const getProductDetailsFromFlipkart = async (
 
     await page.goto(url, { waitUntil: "networkidle2" });
 
+    try {
+      await page.evaluate(() => {
+        const tab = Array.from(document.querySelectorAll("div")).find(
+          (e) =>
+            e.children.length === 0 &&
+            e.textContent?.trim() === "Specifications"
+        );
+        (tab as HTMLElement | undefined)?.click();
+      });
+      await page.waitForSelector("div.grid-formation-dynamic", {
+        timeout: 15000,
+      });
+    } catch {
+    }
+
     const content = await page.content();
     const $ = cheerio.load(content);
 
-    product.title = $("span.VU-ZEz").text().trim();
-    product.rating = $("div.XQDdHH").text().trim();
-    product.price = $("div.Nx9bqj.CxhGGd").text().trim();
-    product.img = $("img.DByuf4.IZexXJ.jLEJ7H").attr("src");
+    const jsonLd = JSON.parse($("script#jsonLD").html() || "[]") as Array<{
+      name?: string;
+      image?: string[];
+      offers?: { price?: number | string };
+      aggregateRating?: { ratingValue?: string; ratingCount?: number };
+    }>;
+    const info = jsonLd[0] || {};
+    product.title = (info.name || "").trim();
+    product.rating = info.aggregateRating?.ratingValue
+      ? `${info.aggregateRating.ratingValue} (${info.aggregateRating.ratingCount ?? 0} ratings)`
+      : undefined;
+    product.price =
+      info.offers?.price !== undefined ? `₹${info.offers.price}` : "";
+    product.img = info.image?.[0];
 
-    const listItems: Record<string, string>[] = [];
-    $("div.pqHCzB").each((i, elem) => {
-      const title = $(elem).find("._9GQWrZ").text().trim();
-      listItems.push({ title });
-    });
-    product.features = listItems;
+    product.features = [];
 
     const tableData: Record<string, string> = {};
-    $("tr.WJdYP6").each((i, elem) => {
-      const key = $(elem).find("td.+fFi1w").text().trim();
-      const value = $(elem).find("td.Izz52n li").text().trim();
-      if (key) {
+    $("div.grid-formation-dynamic").each((i, elem) => {
+      const key = $(elem).find("div.v1zwn21o").first().text().trim();
+      const value = $(elem).find("div.v1zwn21n").first().text().trim();
+      if (key && value) {
         tableData[key] = value;
       }
     });
 
     product.details = [tableData];
 
-    if (product.title === "" || product.details.length === 0) {
+    if (product.title === "" || Object.keys(tableData).length === 0) {
       return "Invalid product page structure";
     }
 
