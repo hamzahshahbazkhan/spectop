@@ -1,38 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SPECTOP
 
-## Getting Started
+Paste two laptop links from Amazon.in or Flipkart, tell it what you care about (gaming, battery, value for money…), and get back a spec-by-spec comparison with an AI verdict on which one to buy.
 
-First, run the development server:
+Live at [spectop.vercel.app](https://spectop.vercel.app/)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## How it works
+
+```
+You → Form → /api/fetch-laptop-data → /compare → /api/compare-laptops → Verdict
+              (scrape both pages)       (reads both      (Gemini compares
+               with headless             products from     them for your
+               Chromium)                 context)          use case)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. **Scrape** — each product page is loaded in headless Chromium and parsed (Amazon by page selectors, Flipkart by its embedded JSON-LD data plus the spec grid). One shared browser per request, both pages in parallel.
+2. **Compare** — both spec sheets go into Gemini 2.5 Flash with a strict prompt that returns one JSON object: a standardized spec table, a 9-category comparison, and a written verdict.
+3. **Render** — the compare page shows the verdict first, then the full spec table and expandable comparison cards.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Tech
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Next.js 14 (App Router) · React 18 · Tailwind · Puppeteer + serverless Chromium · Cheerio · Gemini 2.5 Flash · Vercel
 
-## Learn More
+## Run it locally
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm install
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Get a key at [Google AI Studio](https://aistudio.google.com/apikey), then:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+echo "API_KEY=paste-your-key-here" > .env.local
+npm run dev
+```
 
-## Deploy on Vercel
+Open [http://localhost:3000](http://localhost:3000). A comparison takes around a minute — scraping two full product pages plus the AI call is the bulk of that.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deploy
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# spectop
-# spectop
+Push to `main` — Vercel auto-deploys. Set `API_KEY` in the project environment variables or comparisons will fail.
+
+## Author
+
+Built by [Hamzah Shahbaz Khan](https://github.com/hamzahshahbazkhan).
